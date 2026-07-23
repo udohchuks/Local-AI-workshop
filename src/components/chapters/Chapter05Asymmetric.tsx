@@ -32,7 +32,7 @@ export function Chapter05Asymmetric() {
           <h2 className="text-xl font-bold tracking-tight">Theory & Formula Banner: Asymmetric Quantization Walkthrough</h2>
         </div>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-4xl">
-          Asymmetric Quantization introduces an integer offset <strong>Zero-Point ($z$)</strong> to map asymmetric float ranges $[\beta, \alpha]$ across the full 256-bin spectrum $[-128, 127]$. 
+          Asymmetric Quantization introduces an integer offset <strong>Zero-Point (z)</strong> to map asymmetric float ranges [β, α] across the full 256-bin spectrum [-128, 127]. 
           This avoids wasting discrete integer bins on unused negative ranges, resulting in up to <strong>~5.8× smaller quantization error</strong> than Symmetric mode!
         </p>
 
@@ -129,8 +129,8 @@ export function Chapter05Asymmetric() {
           </div>
 
           <div className="text-xs font-mono space-x-4">
-            <span>Scale ($s$): <strong className="text-blue-600">{asymRes.scale.toFixed(6)}</strong></span>
-            <span>Zero-Point ($z$): <strong className="text-emerald-600">{asymRes.zeroPoint}</strong></span>
+            <span>Scale (s): <strong className="text-blue-600">{asymRes.scale.toFixed(6)}</strong></span>
+            <span>Zero-Point (z): <strong className="text-emerald-600">{asymRes.zeroPoint}</strong></span>
           </div>
         </div>
 
@@ -139,9 +139,9 @@ export function Chapter05Asymmetric() {
           <table className="w-full text-left border-collapse text-xs font-mono">
             <thead>
               <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
-                <th className="p-3">Input ($x_i$) [Editable]</th>
-                <th className="p-3">Exact $(x_i / s) + z$</th>
-                <th className="p-3">Quantized ($q_i$)</th>
+                <th className="p-3">Input (x_i) [Editable]</th>
+                <th className="p-3">Exact (x_i / s) + z</th>
+                <th className="p-3">Quantized (q_i)</th>
                 <th className="p-3">Dequantized ({"$\\hat{x}_i = (q_i - z)s$"})</th>
                 <th className="p-3">Error ({"$|x_i - \\hat{x}_i|$"})</th>
               </tr>

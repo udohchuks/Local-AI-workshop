@@ -84,16 +84,16 @@ export function Chapter01Vram() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-xs">
           <div className="p-3 rounded border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20">
-            <div className="font-bold text-blue-600 dark:text-blue-400">1. Weights ($W$)</div>
+            <div className="font-bold text-blue-600 dark:text-blue-400">1. Weights ({"$W$"})</div>
             <div className="text-zinc-500 dark:text-zinc-400 mt-1">{`N × bytes/param (FP32=4B, FP16=2B, INT8=1B, INT4=0.5B)`}</div>
           </div>
           <div className="p-3 rounded border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20">
-            <div className="font-bold text-amber-600 dark:text-amber-400">2. Gradients ($\nabla W$)</div>
+            <div className="font-bold text-amber-600 dark:text-amber-400">2. Gradients ({"$\\nabla W$"})</div>
             <div className="text-zinc-500 dark:text-zinc-400 mt-1">Stored only for trainable parameters (FP32=4B, FP16=2B).</div>
           </div>
           <div className="p-3 rounded border border-purple-200 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-950/20">
             <div className="font-bold text-purple-600 dark:text-purple-400">3. Optimizer States</div>
-            <div className="text-zinc-500 dark:text-zinc-400 mt-1">FP32 AdamW: $m_t$ (4B) + $v_t$ (4B) = <strong>8 bytes/param</strong>.</div>
+            <div className="text-zinc-500 dark:text-zinc-400 mt-1">FP32 AdamW: {`$m_t$`} (4B) + {`$v_t$`} (4B) = <strong>8 bytes/param</strong>.</div>
           </div>
           <div className="p-3 rounded border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20">
             <div className="font-bold text-emerald-600 dark:text-emerald-400">4. Activations & KV</div>
@@ -237,15 +237,15 @@ export function Chapter01Vram() {
           <div className="flex flex-wrap justify-center items-center gap-4 text-xs font-mono pt-2 border-t border-zinc-200 dark:border-zinc-800">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-blue-600"></div>
-              <span>Weights ($W$)</span>
+              <span>Weights (W)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-amber-500"></div>
-              <span>Gradients ($\nabla W$)</span>
+              <span>Gradients (∇W)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-purple-600"></div>
-              <span>Adam States ($m_t, v_t$)</span>
+              <span>Adam States (m_t, v_t)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-emerald-500"></div>
@@ -267,7 +267,7 @@ export function Chapter01Vram() {
 
           {/* Model Size Slider */}
           <div className="flex items-center gap-3 text-xs font-mono bg-white dark:bg-black p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
-            <span>Model Size ($N$): <strong className="text-blue-600 dark:text-blue-400">{modelParamsB}B Params</strong></span>
+            <span>Model Size (N): <strong className="text-blue-600 dark:text-blue-400">{modelParamsB}B Params</strong></span>
             <input
               type="range"
               min="1"
@@ -286,9 +286,9 @@ export function Chapter01Vram() {
               <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
                 <th className="p-3">Workflow Mode</th>
                 <th className="p-3">Base Precision</th>
-                <th className="p-3">Weights ($W$)</th>
-                <th className="p-3">Gradients ($\nabla W$)</th>
-                <th className="p-3">Adam States ($m_t, v_t$)</th>
+                <th className="p-3">Weights (W)</th>
+                <th className="p-3">Gradients (∇W)</th>
+                <th className="p-3">Adam States (m_t, v_t)</th>
                 <th className="p-3">Total VRAM</th>
                 <th className="p-3">Fits on {capacity}GB GPU?</th>
               </tr>

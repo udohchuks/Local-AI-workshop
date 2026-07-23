@@ -59,7 +59,7 @@ export function Chapter02BitAnatomy() {
           <h2 className="text-xl font-bold tracking-tight">Theory & Formula Banner: Bit Anatomy (IEEE-754 & NF4)</h2>
         </div>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-4xl">
-          Floating-point representation standardizes real continuous numbers into binary representation via three bitfields: <strong>Sign ($S$)</strong>, <strong>Exponent ($E$)</strong>, and <strong>Mantissa ($M$)</strong>. 
+          Floating-point representation standardizes real continuous numbers into binary representation via three bitfields: <strong>Sign (S)</strong>, <strong>Exponent (E)</strong>, and <strong>Mantissa (M)</strong>. 
           NormalFloat 4 (<strong>NF4</strong>) is an information-theoretically optimal 4-bit quantile representation designed for zero-mean Gaussian LLM weights.
         </p>
 

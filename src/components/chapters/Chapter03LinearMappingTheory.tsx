@@ -42,7 +42,7 @@ export function Chapter03LinearMappingTheory() {
         </div>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-4xl">
           Quantization maps continuous floating-point numbers <InlineMath math="[\beta, \alpha] \in \mathbb{R}" /> to discrete integers <InlineMath math="[q_{\min}, q_{\max}] \in \mathbb{Z}" /> via an <strong>affine linear transformation</strong>. 
-          The <strong>Scale ($s$)</strong> defines the real-world float distance per integer grid step, while the <strong>Zero-Point ($z$)</strong> anchors float 0.0 to an integer index.
+          The <strong>Scale (s)</strong> defines the real-world float distance per integer grid step, while the <strong>Zero-Point (z)</strong> anchors float 0.0 to an integer index.
         </p>
 
         <div className="py-3 px-4 rounded-lg bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-sm space-y-2">
@@ -51,13 +51,13 @@ export function Chapter03LinearMappingTheory() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
           <div className="p-3 rounded border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20">
-            <div className="font-bold text-blue-600 dark:text-blue-400">Scale ($s$)</div>
+            <div className="font-bold text-blue-600 dark:text-blue-400">Scale (s)</div>
             <div className="text-zinc-500 dark:text-zinc-400 mt-1">
               <InlineMath math="s = \frac{\alpha - \beta}{q_{\max} - q_{\min}}" />: Real distance between integer steps.
             </div>
           </div>
           <div className="p-3 rounded border border-purple-200 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-950/20">
-            <div className="font-bold text-purple-600 dark:text-purple-400">Zero-Point ($z$)</div>
+            <div className="font-bold text-purple-600 dark:text-purple-400">Zero-Point (z)</div>
             <div className="text-zinc-500 dark:text-zinc-400 mt-1">
               <InlineMath math="z = \text{round}\left(-\frac{\beta}{s}\right) + q_{\min}" />: Integer index corresponding to float 0.0.
             </div>
