@@ -53,8 +53,8 @@ export function Chapter07LoraWalkthrough() {
         </p>
 
         <div className="py-3 px-4 rounded-lg bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-sm space-y-2">
-          <BlockMath math={`\\Delta W = \\frac{\\alpha}{r} (B \\cdot A), \\quad \\text{where } A \\in \\mathbb{R}^{r \\times k}, \\; B \\in \\mathbb{R}^{d \\times r}`} />
-          <BlockMath math={`\\text{Forward Pass: } h = W_0 x + \\frac{\\alpha}{r} (B \\cdot A) x`} />
+          <BlockMath math="\Delta W = \frac{\alpha}{r} (B \cdot A), \quad \text{where } A \in \mathbb{R}^{r \times k}, \; B \in \mathbb{R}^{d \times r}" />
+          <BlockMath math="\text{Forward Pass: } h = W_0 x + \frac{\alpha}{r} (B \cdot A) x" />
         </div>
       </section>
 

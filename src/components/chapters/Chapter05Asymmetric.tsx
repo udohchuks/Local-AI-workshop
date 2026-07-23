@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import 'katex/dist/katex.min.css';
-import { BlockMath } from 'react-katex';
+import { BlockMath, InlineMath } from 'react-katex';
 import { quantizeSymmetric, quantizeAsymmetric } from "../../lib/quantization-math";
 import { ArrowRight, Check, AlertCircle } from "lucide-react";
 
@@ -37,8 +37,8 @@ export function Chapter05Asymmetric() {
         </p>
 
         <div className="py-3 px-4 rounded-lg bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-sm space-y-2">
-          <BlockMath math={`s = \\frac{\\alpha - \\beta}{255}, \\quad z = \\text{round}\\left(-\\frac{\\beta}{s}\\right) - 128`} />
-          <BlockMath math={`q = \\text{clamp}\\left( \\text{round}\\left(\\frac{x}{s}\\right) + z, -128, 127 \\right), \\quad \\hat{x} = (q - z) \\times s`} />
+          <BlockMath math="s = \frac{\alpha - \beta}{255}, \quad z = \text{round}\left(-\frac{\beta}{s}\right) - 128" />
+          <BlockMath math="q = \text{clamp}\left( \text{round}\left(\frac{x}{s}\right) + z, -128, 127 \right), \quad \hat{x} = (q - z) \times s" />
         </div>
       </section>
 
@@ -53,8 +53,8 @@ export function Chapter05Asymmetric() {
           </div>
 
           <div className="flex items-center gap-2 font-mono text-xs">
-            <span className="px-2.5 py-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">
-              Zero-Point $z = {asymRes.zeroPoint}$
+            <span className="px-2.5 py-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-1">
+              Zero-Point <InlineMath math={`z = ${asymRes.zeroPoint}`} />
             </span>
             <span className="px-2.5 py-1 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold">
               ~{errorRatio.toFixed(1)}× Smaller Error
@@ -68,7 +68,7 @@ export function Chapter05Asymmetric() {
           {/* Symmetric Mode Card */}
           <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090B] space-y-4">
             <div className="flex justify-between items-center font-mono text-xs">
-              <span className="font-bold text-purple-600">Symmetric Mode ($z=0$)</span>
+              <span className="font-bold text-purple-600 flex items-center gap-1">Symmetric Mode (<InlineMath math="z=0" />)</span>
               <span className="text-red-500 font-bold">MAE = {symRes.mae.toFixed(4)}</span>
             </div>
 
@@ -93,7 +93,7 @@ export function Chapter05Asymmetric() {
           {/* Asymmetric Mode Card */}
           <div className="p-4 rounded-xl border border-emerald-300 dark:border-emerald-800/60 bg-emerald-50/30 dark:bg-emerald-950/20 space-y-4">
             <div className="flex justify-between items-center font-mono text-xs">
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">Asymmetric Mode ($z = {asymRes.zeroPoint}$)</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">Asymmetric Mode (<InlineMath math={`z = ${asymRes.zeroPoint}`} />)</span>
               <span className="text-emerald-600 font-bold">MAE = {asymRes.mae.toFixed(4)}</span>
             </div>
 
@@ -139,11 +139,11 @@ export function Chapter05Asymmetric() {
           <table className="w-full text-left border-collapse text-xs font-mono">
             <thead>
               <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
-                <th className="p-3">Input (x_i) [Editable]</th>
-                <th className="p-3">Exact (x_i / s) + z</th>
-                <th className="p-3">Quantized (q_i)</th>
-                <th className="p-3">Dequantized ({"$\\hat{x}_i = (q_i - z)s$"})</th>
-                <th className="p-3">Error ({"$|x_i - \\hat{x}_i|$"})</th>
+                <th className="p-3">Input (<InlineMath math="x_i" />) [Editable]</th>
+                <th className="p-3">Exact <InlineMath math="(x_i / s) + z" /></th>
+                <th className="p-3">Quantized (<InlineMath math="q_i" />)</th>
+                <th className="p-3">Dequantized (<InlineMath math="\hat{x}_i = (q_i - z)s" />)</th>
+                <th className="p-3">Error (<InlineMath math="|x_i - \hat{x}_i|" />)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">

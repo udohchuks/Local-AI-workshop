@@ -46,7 +46,7 @@ export function Chapter03LinearMappingTheory() {
         </p>
 
         <div className="py-3 px-4 rounded-lg bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-sm space-y-2">
-          <BlockMath math={`q = \\text{clamp}\\left( \\text{round}\\left(\\frac{x}{s}\\right) + z, \\; q_{\\min}, \\; q_{\\max} \\right), \\quad \\hat{x} = (q - z) \\times s`} />
+          <BlockMath math="q = \text{clamp}\left( \text{round}\left(\frac{x}{s}\right) + z, \; q_{\min}, \; q_{\max} \right), \quad \hat{x} = (q - z) \times s" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">

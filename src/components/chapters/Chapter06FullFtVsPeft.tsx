@@ -37,7 +37,7 @@ export function Chapter06FullFtVsPeft() {
         </p>
 
         <div className="py-3 px-4 rounded-lg bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-sm">
-          <BlockMath math={`W_{\\text{Full FT}} = W_0 - \\eta \\cdot \\text{Adam}(\\nabla_W \\mathcal{L}) \\quad \\text{vs} \\quad W_{\\text{PEFT}} = W_0 + \\Delta W(\\Theta_{\\text{adapter}})`} />
+          <BlockMath math="W_{\text{Full FT}} = W_0 - \eta \cdot \text{Adam}(\nabla_W \mathcal{L}) \quad \text{vs} \quad W_{\text{PEFT}} = W_0 + \Delta W(\Theta_{\text{adapter}})" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">

@@ -34,8 +34,8 @@ export function Chapter04Symmetric() {
         </p>
 
         <div className="py-3 px-4 rounded-lg bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-sm space-y-2">
-          <BlockMath math={`\\alpha = \\max(|x_{\\min}|, |x_{\\max}|), \\quad s = \\frac{\\alpha}{127}`} />
-          <BlockMath math={`q = \\text{clamp}\\left( \\text{round}\\left(\\frac{x}{s}\\right), -128, 127 \\right), \\quad \\hat{x} = q \\times s`} />
+          <BlockMath math="\alpha = \max(|x_{\min}|, |x_{\max}|), \quad s = \frac{\alpha}{127}" />
+          <BlockMath math="q = \text{clamp}\left( \text{round}\left(\frac{x}{s}\right), -128, 127 \right), \quad \hat{x} = q \times s" />
         </div>
       </section>
 

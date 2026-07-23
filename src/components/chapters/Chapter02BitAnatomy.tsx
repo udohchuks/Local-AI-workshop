@@ -64,7 +64,7 @@ export function Chapter02BitAnatomy() {
         </p>
 
         <div className="py-3 px-4 rounded-lg bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-sm">
-          <BlockMath math={`\\text{Value} = (-1)^S \\times 2^{E - \\text{Bias}} \\times \\left(1 + \\frac{M}{2^{\\text{bits}}}\\right)`} />
+          <BlockMath math="\text{Value} = (-1)^S \times 2^{E - \text{Bias}} \times \left(1 + \frac{M}{2^{\text{bits}}}\right)" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-xs">

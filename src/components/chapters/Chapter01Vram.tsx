@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../../lib/utils";
 import 'katex/dist/katex.min.css';
-import { BlockMath } from 'react-katex';
+import { BlockMath, InlineMath } from 'react-katex';
 import { AlertTriangle, Server, HardDrive, Cpu, Layers } from "lucide-react";
 
 const WORKFLOWS = [
@@ -75,25 +75,25 @@ export function Chapter01Vram() {
         </div>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-4xl">
           GPU Memory (VRAM) consumption in Deep Learning and LLMs is governed by four main memory pools. 
-          While inference only requires storing base model weights and activations, <strong>Full Fine-Tuning</strong> demands storing gradients and full FP32 Adam optimizer states ($m_t, v_t$), consuming up to <strong>16× the VRAM of inference</strong>!
+          While inference only requires storing base model weights and activations, <strong>Full Fine-Tuning</strong> demands storing gradients and full FP32 Adam optimizer states (<InlineMath math="(m_t, v_t)" />), consuming up to <strong>16× the VRAM of inference</strong>!
         </p>
 
         <div className="py-3 px-4 rounded-lg bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-sm">
-          <BlockMath math={`\\text{Total VRAM} = M_{\\text{weights}} + M_{\\text{gradients}} + M_{\\text{optimizer}} + M_{\\text{activations/KV}`} />
+          <BlockMath math="\text{Total VRAM} = M_{\text{weights}} + M_{\text{gradients}} + M_{\text{optimizer}} + M_{\text{activations/KV}}" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-xs">
           <div className="p-3 rounded border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20">
-            <div className="font-bold text-blue-600 dark:text-blue-400">1. Weights ({"$W$"})</div>
+            <div className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">1. Weights (<InlineMath math="W" />)</div>
             <div className="text-zinc-500 dark:text-zinc-400 mt-1">{`N × bytes/param (FP32=4B, FP16=2B, INT8=1B, INT4=0.5B)`}</div>
           </div>
           <div className="p-3 rounded border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20">
-            <div className="font-bold text-amber-600 dark:text-amber-400">2. Gradients ({"$\\nabla W$"})</div>
+            <div className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">2. Gradients (<InlineMath math="\nabla W" />)</div>
             <div className="text-zinc-500 dark:text-zinc-400 mt-1">Stored only for trainable parameters (FP32=4B, FP16=2B).</div>
           </div>
           <div className="p-3 rounded border border-purple-200 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-950/20">
             <div className="font-bold text-purple-600 dark:text-purple-400">3. Optimizer States</div>
-            <div className="text-zinc-500 dark:text-zinc-400 mt-1">FP32 AdamW: {`$m_t$`} (4B) + {`$v_t$`} (4B) = <strong>8 bytes/param</strong>.</div>
+            <div className="text-zinc-500 dark:text-zinc-400 mt-1">FP32 AdamW: <InlineMath math="m_t" /> (4B) + <InlineMath math="v_t" /> (4B) = <strong>8 bytes/param</strong>.</div>
           </div>
           <div className="p-3 rounded border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20">
             <div className="font-bold text-emerald-600 dark:text-emerald-400">4. Activations & KV</div>

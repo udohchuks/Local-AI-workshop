@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../../lib/utils";
 import 'katex/dist/katex.min.css';
-import { BlockMath } from 'react-katex';
+import { BlockMath, InlineMath } from 'react-katex';
 import { calculateQloraVram } from "../../lib/lora-math";
 import { Cpu, HardDrive, Zap, Server, Shield, Layers, Play } from "lucide-react";
 
@@ -29,7 +29,7 @@ export function Chapter08QloraSynthesis() {
         </p>
 
         <div className="py-3 px-4 rounded-lg bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-sm">
-          <BlockMath math={`h = \\text{Dequantize}\\left(W^{\\text{NF4}}_0\\right) x + \\frac{\\alpha}{r} (B \\cdot A) x`} />
+          <BlockMath math="h = \text{Dequantize}\left(W^{\text{NF4}}_0\right) x + \frac{\alpha}{r} (B \cdot A) x" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
@@ -120,8 +120,8 @@ export function Chapter08QloraSynthesis() {
                   <span>NF4 4-bit Base Model + DQ</span>
                   <span>{qloraVram.baseNf4Gbs.toFixed(1)} GB</span>
                 </div>
-                <div className="p-2 rounded bg-emerald-500 text-white flex justify-between font-bold">
-                  <span>LoRA Adapters ($r=64$)</span>
+                <div className="p-2 rounded bg-emerald-500 text-white flex justify-between font-bold flex items-center gap-1">
+                  <span>LoRA Adapters (<InlineMath math="r=64" />)</span>
                   <span>{qloraVram.adaptersGbs.toFixed(1)} GB</span>
                 </div>
                 {!isPagedCpu && (
@@ -176,7 +176,7 @@ export function Chapter08QloraSynthesis() {
           </div>
 
           <div className="flex items-center gap-3 text-xs font-mono">
-            <span>Model Size ($N$):</span>
+            <span className="flex items-center gap-1">Model Size (<InlineMath math="N" />):</span>
             <input
               type="number"
               min="7"
