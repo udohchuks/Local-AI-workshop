@@ -1,0 +1,53 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-serif: 'Playfair Display', serif;
+
+  --color-brand-emerald: #059669;
+  --color-brand-crimson: #DC2626;
+  --color-brand-blue: #2563EB;
+  
+  --color-bg-app: var(--bg-app);
+  --color-text-main: var(--text-main);
+  --color-border-main: var(--border-main);
+  --color-card-main: var(--card-main);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-text-muted: var(--text-muted);
+
+  --color-bg-dark: #000000;
+  --color-text-dark: #FFFFFF;
+  --color-border-dark: #52525B;
+  --color-card-dark: #09090B;
+  --color-sidebar-dark: #09090B;
+  --color-text-muted-dark: #A1A1AA;
+}
+
+:root {
+  --bg-app: #FAFAFA;
+  --text-main: #000000;
+  --border-main: #E4E4E7;
+  --card-main: #FFFFFF;
+  --sidebar-bg: #F4F4F5;
+  --text-muted: #71717A;
+}
+
+:is(.dark) {
+  --bg-app: #09090B;
+  --text-main: #FFFFFF;
+  --border-main: #27272A;
+  --card-main: #09090B;
+  --sidebar-bg: #000000;
+  --text-muted: #A1A1AA;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+.katex {
+  color: var(--color-text-main);
+}
+:is(.dark .katex) {
+  color: var(--color-text-dark);
+}
