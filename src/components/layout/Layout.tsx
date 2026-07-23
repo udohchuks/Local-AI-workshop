@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { cn } from "../../lib/utils";
-import { Menu, Moon, Sun, X } from "lucide-react";
+import { Menu, Moon, Sun, X, ChevronRight, ChevronLeft } from "lucide-react";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,12 +10,15 @@ interface LayoutProps {
   toggleDark: () => void;
 }
 
-const CHAPTERS = [
-  "01. VRAM Bottlenecks",
-  "02. Anatomy of a Bit",
-  "03. Linear Mapping Theory",
-  "04. Symmetric Walkthrough",
-  "05. Asymmetric Walkthrough",
+export const CHAPTER_LIST = [
+  { id: 0, part: "PART I: QUANTIZATION", title: "01. VRAM & Memory Breakdown" },
+  { id: 1, part: "PART I: QUANTIZATION", title: "02. Anatomy of a Bit & Data Types" },
+  { id: 2, part: "PART I: QUANTIZATION", title: "03. Linear Mapping Theory" },
+  { id: 3, part: "PART I: QUANTIZATION", title: "04. Symmetric Quantization Walkthrough" },
+  { id: 4, part: "PART I: QUANTIZATION", title: "05. Asymmetric Quantization Walkthrough" },
+  { id: 5, part: "PART II: FINE-TUNING & LORA", title: "06. Full Fine-Tuning vs. PEFT" },
+  { id: 6, part: "PART II: FINE-TUNING & LORA", title: "07. Low-Rank Adaptation (LoRA) Walkthrough" },
+  { id: 7, part: "PART II: FINE-TUNING & LORA", title: "08. QLoRA Master Synthesis" },
 ];
 
 export function Layout({ children, chapter, setChapter, isDark, toggleDark }: LayoutProps) {
@@ -27,94 +30,172 @@ export function Layout({ children, chapter, setChapter, isDark, toggleDark }: La
     }
   }, []);
 
+  const part1Chapters = CHAPTER_LIST.filter(c => c.part === "PART I: QUANTIZATION");
+  const part2Chapters = CHAPTER_LIST.filter(c => c.part === "PART II: FINE-TUNING & LORA");
+
+  const currentChapterObj = CHAPTER_LIST.find(c => c.id === chapter) || CHAPTER_LIST[0];
+
   return (
-    <div className={cn("flex flex-col h-screen w-full font-sans overflow-hidden select-none transition-colors duration-200", isDark ? "dark bg-bg-dark text-text-dark" : "bg-bg-app text-text-main")}>
+    <div className={cn("flex flex-col h-screen w-full font-sans overflow-hidden select-none transition-colors duration-200", isDark ? "dark bg-[#09090B] text-white" : "bg-[#FAFAFA] text-black")}>
       {/* Top Navigation Header */}
-      <header className="h-14 border-b border-border-main dark:border-border-dark bg-white dark:bg-bg-dark flex items-center justify-between px-6 shrink-0 transition-colors z-50">
-        <div className="flex items-center gap-4">
+      <header className="h-14 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090B] flex items-center justify-between px-4 lg:px-6 shrink-0 transition-colors z-50">
+        <div className="flex items-center gap-3">
           <button 
             onClick={() => setSidebarOpen(!isSidebarOpen)}
-            className="w-8 h-8 rounded border border-border-main dark:border-border-dark flex items-center justify-center text-xs hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            className="w-8 h-8 rounded border border-zinc-200 dark:border-zinc-800 flex items-center justify-center text-xs hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            title="Toggle Sidebar [≡]"
           >
-            {isSidebarOpen ? <X size={14} /> : <Menu size={14} />}
+            {isSidebarOpen ? <X size={15} /> : <Menu size={15} />}
           </button>
-          <div className="w-8 h-8 bg-text-main dark:bg-text-dark flex items-center justify-center rounded-sm ml-2">
-            <div className="w-4 h-4 border-2 border-white dark:border-black rotate-45"></div>
+          <div className="w-7 h-7 bg-black dark:bg-white flex items-center justify-center rounded-sm ml-1">
+            <div className="w-3.5 h-3.5 border-2 border-white dark:border-black rotate-45"></div>
           </div>
-          <h1 className="text-sm font-bold tracking-tight uppercase hidden sm:block">A Visual Guide to Quantization</h1>
-          <h1 className="text-sm font-bold tracking-tight uppercase sm:hidden">Quantization</h1>
+          <h1 className="text-xs sm:text-sm font-bold tracking-tight uppercase hidden md:block">
+            A Visual Guide to LLM Efficiency: <span className="text-blue-600 dark:text-blue-400">Quantization, LoRA & QLoRA</span>
+          </h1>
+          <h1 className="text-xs font-bold tracking-tight uppercase md:hidden">
+            LLM Efficiency
+          </h1>
         </div>
-        <div className="flex items-center gap-8">
+
+        <div className="flex items-center gap-4 sm:gap-6">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono text-text-muted dark:text-text-muted-dark uppercase whitespace-nowrap">
-              CHAPTER {(chapter + 1).toString().padStart(2, '0')} / {(CHAPTERS.length).toString().padStart(2, '0')}
+            <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 uppercase whitespace-nowrap">
+              CHAPTER {(chapter + 1).toString().padStart(2, '0')} / {(CHAPTER_LIST.length).toString().padStart(2, '0')}
             </span>
-            <div className="w-32 h-1 bg-border-main dark:bg-border-dark rounded-full overflow-hidden hidden md:block">
+            <div className="w-24 sm:w-32 h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden hidden sm:block">
               <div 
-                className="h-full bg-text-main dark:bg-text-dark transition-all duration-300 ease-out" 
-                style={{ width: `${((chapter + 1) / CHAPTERS.length) * 100}%` }}
+                className="h-full bg-black dark:bg-white transition-all duration-300 ease-out" 
+                style={{ width: `${((chapter + 1) / CHAPTER_LIST.length) * 100}%` }}
               ></div>
             </div>
           </div>
-          <div className="flex items-center gap-3 border-l border-border-main dark:border-border-dark pl-6">
+
+          <div className="flex items-center gap-2 border-l border-zinc-200 dark:border-zinc-800 pl-4 sm:pl-6">
             <button 
               onClick={toggleDark}
-              className="w-8 h-8 rounded border border-border-main dark:border-border-dark flex items-center justify-center text-xs hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              className="w-8 h-8 rounded border border-zinc-200 dark:border-zinc-800 flex items-center justify-center text-xs hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
-              {isDark ? <Sun size={14} /> : <Moon size={14} />}
+              {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-zinc-700" />}
             </button>
           </div>
         </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Collapsible Sidebar */}
+        {/* Collapsible Categorized Sidebar */}
         <aside 
           className={cn(
-            "fixed inset-y-0 left-0 top-14 z-40 bg-sidebar-bg dark:bg-sidebar-dark border-r border-border-main dark:border-border-dark p-6 flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out lg:relative lg:top-0 overflow-hidden",
-            isSidebarOpen ? "w-64 translate-x-0" : "w-64 -translate-x-full lg:translate-x-0 lg:w-0 lg:p-0 lg:border-r-0 lg:opacity-0"
+            "fixed inset-y-0 left-0 top-14 z-40 bg-zinc-100 dark:bg-[#000000] border-r border-zinc-200 dark:border-zinc-800 p-5 flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out lg:relative lg:top-0 overflow-y-auto",
+            isSidebarOpen ? "w-72 translate-x-0" : "w-72 -translate-x-full lg:translate-x-0 lg:w-0 lg:p-0 lg:border-r-0 lg:opacity-0"
           )}
         >
-          <nav className="space-y-1 w-52">
-            <div className="text-[10px] font-bold text-text-muted dark:text-text-muted-dark uppercase tracking-widest mb-4">Curriculum</div>
-            {CHAPTERS.map((title, idx) => (
-              <div
-                key={idx}
-                onClick={() => { setChapter(idx); if (window.innerWidth < 1024) setSidebarOpen(false); }}
-                className={cn(
-                  "p-3 text-xs flex items-center gap-3 rounded cursor-pointer transition-colors",
-                  chapter === idx 
-                    ? "bg-white dark:bg-card-dark border border-border-main dark:border-border-dark font-bold shadow-sm" 
-                    : "opacity-50 hover:opacity-100"
-                )}
-              >
-                <span className={cn("font-mono", chapter === idx && "text-brand-blue")}>
-                  {(idx + 1).toString().padStart(2, '0')}
-                </span> 
-                {title}
+          <div className="space-y-6 w-full">
+            <div>
+              <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2 font-mono">
+                PART I: QUANTIZATION
               </div>
-            ))}
-          </nav>
+              <div className="space-y-1">
+                {part1Chapters.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => { setChapter(item.id); if (window.innerWidth < 1024) setSidebarOpen(false); }}
+                    className={cn(
+                      "w-full text-left p-2.5 text-xs flex items-center gap-2.5 rounded transition-all",
+                      chapter === item.id 
+                        ? "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 font-bold text-black dark:text-white shadow-sm" 
+                        : "opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5"
+                    )}
+                  >
+                    <span className={cn("font-mono text-[11px]", chapter === item.id ? "text-blue-600 dark:text-blue-400 font-bold" : "text-zinc-500")}>
+                      {(item.id + 1).toString().padStart(2, '0')}
+                    </span> 
+                    <span className="truncate">{item.title.replace(/^\d+\.\s*/, '')}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <div className="bg-text-main dark:bg-white text-white dark:text-black p-4 rounded-lg mt-8 w-52">
-            <div className="text-[10px] uppercase opacity-50 mb-1 font-mono">Real-time Memory Saving</div>
-            <div className="text-2xl font-mono">-87.5%</div>
-            <div className="text-[10px] opacity-70 mt-2 italic font-serif">From FP32 to INT4 precision</div>
+            <div>
+              <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2 font-mono">
+                PART II: FINE-TUNING & LORA
+              </div>
+              <div className="space-y-1">
+                {part2Chapters.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => { setChapter(item.id); if (window.innerWidth < 1024) setSidebarOpen(false); }}
+                    className={cn(
+                      "w-full text-left p-2.5 text-xs flex items-center gap-2.5 rounded transition-all",
+                      chapter === item.id 
+                        ? "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 font-bold text-black dark:text-white shadow-sm" 
+                        : "opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5"
+                    )}
+                  >
+                    <span className={cn("font-mono text-[11px]", chapter === item.id ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-zinc-500")}>
+                      {(item.id + 1).toString().padStart(2, '0')}
+                    </span> 
+                    <span className="truncate">{item.title.replace(/^\d+\.\s*/, '')}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+            <div className="bg-zinc-900 dark:bg-zinc-900 text-white p-3.5 rounded-lg border border-zinc-800">
+              <div className="text-[9px] uppercase tracking-widest text-zinc-400 font-mono">Active Chapter</div>
+              <div className="text-xs font-bold mt-1 text-blue-400 truncate">{currentChapterObj.title}</div>
+            </div>
           </div>
         </aside>
 
-        {/* Backdrop for mobile sidebar */}
+        {/* Mobile backdrop */}
         {isSidebarOpen && (
           <div 
-            className="fixed inset-0 top-14 bg-black/20 z-30 lg:hidden"
+            className="fixed inset-0 top-14 bg-black/40 backdrop-blur-xs z-30 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
-        {/* Main Stage Content */}
-        <main className="flex-1 flex flex-col bg-white dark:bg-card-dark overflow-hidden transition-colors relative z-0">
-          <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden relative w-full h-full">
+        {/* Main Workspace Stage */}
+        <main className="flex-1 flex flex-col bg-white dark:bg-[#09090B] overflow-hidden transition-colors relative z-0">
+          <div className="flex-1 flex flex-col overflow-y-auto">
             {children}
+
+            {/* Bottom Linear Navigation Controls */}
+            <footer className="border-t border-zinc-200 dark:border-zinc-800 p-4 bg-zinc-50 dark:bg-[#09090B] flex items-center justify-between shrink-0">
+              <button
+                disabled={chapter === 0}
+                onClick={() => setChapter(Math.max(0, chapter - 1))}
+                className={cn(
+                  "px-4 py-2 text-xs font-medium rounded border flex items-center gap-2 transition-all",
+                  chapter === 0
+                    ? "opacity-30 cursor-not-allowed border-zinc-200 dark:border-zinc-800"
+                    : "border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                )}
+              >
+                <ChevronLeft size={14} /> Previous Chapter
+              </button>
+
+              <div className="text-[11px] font-mono text-zinc-500 hidden sm:block">
+                {currentChapterObj.title}
+              </div>
+
+              <button
+                disabled={chapter === CHAPTER_LIST.length - 1}
+                onClick={() => setChapter(Math.min(CHAPTER_LIST.length - 1, chapter + 1))}
+                className={cn(
+                  "px-4 py-2 text-xs font-medium rounded border flex items-center gap-2 transition-all",
+                  chapter === CHAPTER_LIST.length - 1
+                    ? "opacity-30 cursor-not-allowed border-zinc-200 dark:border-zinc-800"
+                    : "border-blue-600 bg-blue-600 text-white hover:bg-blue-700 dark:border-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600"
+                )}
+              >
+                Next Chapter <ChevronRight size={14} />
+              </button>
+            </footer>
           </div>
         </main>
       </div>

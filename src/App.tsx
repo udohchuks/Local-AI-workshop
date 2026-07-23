@@ -5,6 +5,9 @@ import { Chapter02BitAnatomy } from "./components/chapters/Chapter02BitAnatomy";
 import { Chapter03LinearMappingTheory } from "./components/chapters/Chapter03LinearMappingTheory";
 import { Chapter04Symmetric } from "./components/chapters/Chapter04Symmetric";
 import { Chapter05Asymmetric } from "./components/chapters/Chapter05Asymmetric";
+import { Chapter06FullFtVsPeft } from "./components/chapters/Chapter06FullFtVsPeft";
+import { Chapter07LoraWalkthrough } from "./components/chapters/Chapter07LoraWalkthrough";
+import { Chapter08QloraSynthesis } from "./components/chapters/Chapter08QloraSynthesis";
 
 export default function App() {
   const [chapter, setChapter] = useState(0);
@@ -33,6 +36,9 @@ export default function App() {
       {chapter === 2 && <Chapter03LinearMappingTheory />}
       {chapter === 3 && <Chapter04Symmetric />}
       {chapter === 4 && <Chapter05Asymmetric />}
+      {chapter === 5 && <Chapter06FullFtVsPeft />}
+      {chapter === 6 && <Chapter07LoraWalkthrough />}
+      {chapter === 7 && <Chapter08QloraSynthesis />}
     </Layout>
   );
 }

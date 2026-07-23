@@ -1,191 +1,316 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
-import { ieee754ToFloat } from "../../lib/quantization-math";
 import 'katex/dist/katex.min.css';
-import { BlockMath } from 'react-katex';
-
-type Format = "FP32" | "BF16" | "FP16" | "INT8" | "INT4" | "INT2" | "INT1";
-
-const FORMATS: Record<Format, { sign: number, exp: number, mantissa: number, expBias: number, isInt?: boolean }> = {
-  FP32: { sign: 1, exp: 8, mantissa: 23, expBias: 127 },
-  BF16: { sign: 1, exp: 8, mantissa: 7, expBias: 127 },
-  FP16: { sign: 1, exp: 5, mantissa: 10, expBias: 15 },
-  INT8: { sign: 1, exp: 0, mantissa: 7, expBias: 0, isInt: true },
-  INT4: { sign: 1, exp: 0, mantissa: 3, expBias: 0, isInt: true },
-  INT2: { sign: 1, exp: 0, mantissa: 1, expBias: 0, isInt: true },
-  INT1: { sign: 1, exp: 0, mantissa: 0, expBias: 0, isInt: true },
-};
+import { BlockMath, InlineMath } from 'react-katex';
+import { NF4_QUANTILE_TABLE, quantizeNF4, floatToIeee754, ieee754ToFloat } from "../../lib/quantization-math";
+import { Binary, Activity } from "lucide-react";
 
 export function Chapter02BitAnatomy() {
-  const [format, setFormat] = useState<Format>("FP32");
+  const [selectedFormat, setSelectedFormat] = useState<"FP32" | "FP16" | "BF16" | "NF4">("FP32");
   
-  // Initialize to Pi approx
-  const [bits, setBits] = useState<number[]>([
-    0, // Sign
-    1, 0, 0, 0, 0, 0, 0, 0, // Exponent (128)
-    1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1 // Mantissa
-  ]);
+  // State for interactive bit manipulation for FP32
+  const [signBit, setSignBit] = useState<number>(0);
+  const [exponentBits, setExponentBits] = useState<number[]>([1, 0, 0, 0, 0, 0, 0, 1]); // 129 -> unbiased 2
+  const [mantissaBits, setMantissaBits] = useState<number[]>([1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1]); // ~0.6
 
-  // When format changes, resize bits array padding with 0s or truncating
-  useEffect(() => {
-    const totalBits = FORMATS[format].sign + FORMATS[format].exp + FORMATS[format].mantissa;
-    setBits(prev => {
-      const newBits = [...prev];
-      while (newBits.length < totalBits) newBits.push(0);
-      return newBits.slice(0, totalBits);
-    });
-  }, [format]);
+  // Interactive Target Value for Numerical Lab (Section 3)
+  const [targetVal, setTargetVal] = useState<number>(6.4);
+  const [nf4TestVal, setNf4TestVal] = useState<number>(0.55);
 
-  const toggleBit = (idx: number) => {
-    setBits(prev => {
-      const next = [...prev];
-      next[idx] = next[idx] === 0 ? 1 : 0;
-      return next;
-    });
+  // Compute calculated float from FP32 bit-strip
+  const computedFloatVal = ieee754ToFloat(signBit, exponentBits, mantissaBits);
+  const expValueInt = exponentBits.reduce((acc, bit, i) => acc + bit * Math.pow(2, exponentBits.length - 1 - i), 0);
+  const mantissaValueFrac = mantissaBits.reduce((acc, bit, i) => acc + bit * Math.pow(2, -(i + 1)), 0);
+
+  // NF4 calculation
+  const nf4Result = quantizeNF4(nf4TestVal);
+
+  const toggleExponentBit = (idx: number) => {
+    const next = [...exponentBits];
+    next[idx] = next[idx] === 0 ? 1 : 0;
+    setExponentBits(next);
   };
 
-  const f = FORMATS[format];
-  const signBit = bits[0];
-  const expBits = bits.slice(1, 1 + f.exp);
-  const mantissaBits = bits.slice(1 + f.exp);
+  const toggleMantissaBit = (idx: number) => {
+    const next = [...mantissaBits];
+    next[idx] = next[idx] === 0 ? 1 : 0;
+    setMantissaBits(next);
+  };
 
-  let decimalValue = 0;
-  if (format === "FP32" || format === "BF16") {
-    // We pad mantissa to 23 for our helper
-    const paddedMantissa = [...mantissaBits];
-    while (paddedMantissa.length < 23) paddedMantissa.push(0);
-    decimalValue = ieee754ToFloat(signBit, expBits, paddedMantissa);
-  } else if (format === "FP16") {
-    // Custom fp16 logic for display purposes
-    const expVal = expBits.reduce((acc, b, i) => acc + b * Math.pow(2, expBits.length - 1 - i), 0);
-    const mantissaVal = mantissaBits.reduce((acc, b, i) => acc + b * Math.pow(2, -(i + 1)), 0);
-    if (expVal === 0) {
-      decimalValue = Math.pow(-1, signBit) * Math.pow(2, 1 - 15) * mantissaVal;
-    } else if (expVal === 31) {
-      decimalValue = mantissaVal === 0 ? (signBit === 1 ? -Infinity : Infinity) : NaN;
-    } else {
-      decimalValue = Math.pow(-1, signBit) * Math.pow(2, expVal - 15) * (1 + mantissaVal);
-    }
-  } else if (f.isInt) {
-    if (f.mantissa === 0) {
-      // INT1 specific mapping (e.g. 0 -> -1, 1 -> 1 or just standard sign)
-      decimalValue = signBit === 1 ? -1 : 0;
-    } else {
-      // Two's complement integer reading
-      const magnitude = mantissaBits.reduce((acc, b, i) => acc + b * Math.pow(2, f.mantissa - 1 - i), 0);
-      decimalValue = -signBit * Math.pow(2, f.mantissa) + magnitude;
-    }
-  }
+  // Set bit strip directly from target value
+  const applyTargetValToBits = (val: number) => {
+    setTargetVal(val);
+    const ieee = floatToIeee754(val);
+    setSignBit(ieee.sign);
+    setExponentBits(ieee.exponent);
+    setMantissaBits(ieee.mantissa);
+  };
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row w-full h-full animate-in fade-in duration-500">
-      {/* Narrative Pane */}
-      <section className="w-full lg:w-[420px] p-6 lg:p-10 border-b lg:border-b-0 lg:border-r border-border-main dark:border-border-dark flex flex-col gap-6 shrink-0 bg-white dark:bg-bg-dark overflow-y-auto">
-        <div className="space-y-4">
-          <h2 className="text-3xl font-serif leading-tight italic">Anatomy of a Bit</h2>
-          <p className="text-sm text-text-muted dark:text-text-muted-dark leading-relaxed">
-            Understanding data formats is crucial. IEEE-754 formats use an exponent for scale, whereas Integer formats map linearly. Lower precision like INT4 and INT2 squeeze values aggressively.
-          </p>
+    <div className="flex flex-col w-full min-h-full p-4 lg:p-8 space-y-8 bg-white dark:bg-[#09090B] text-black dark:text-white">
+      
+      {/* 📖 SECTION 1: THEORY & FORMULA BANNER */}
+      <section className="p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="p-2 rounded bg-blue-600/10 text-blue-600 dark:text-blue-400 font-mono text-xs font-bold">
+            SECTION 1
+          </span>
+          <h2 className="text-xl font-bold tracking-tight">Theory & Formula Banner: Bit Anatomy (IEEE-754 & NF4)</h2>
         </div>
-        
-        <div className="p-5 bg-sidebar-bg dark:bg-[#121214] border-l-4 border-brand-blue text-[11px] leading-relaxed">
-          <div className="text-text-muted dark:text-text-muted-dark mb-3 font-bold uppercase tracking-widest font-sans">Math Engine</div>
-          <div className="text-[13px] overflow-x-auto overflow-y-hidden">
-            {f.isInt ? (
-              <BlockMath math={`\\text{Value} = -S \\times 2^{${f.mantissa}} + \\sum_{i=0}^{${f.mantissa - 1}} M_i 2^i`} />
-            ) : (
-              <BlockMath math={`\\text{Value} = (-1)^S \\times 2^{E - ${f.expBias}} \\times \\left(1 + \\sum_{i=1}^{${f.mantissa}} M_i 2^{-i}\\right)`} />
-            )}
-          </div>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-4xl">
+          Floating-point representation standardizes real continuous numbers into binary representation via three bitfields: <strong>Sign ($S$)</strong>, <strong>Exponent ($E$)</strong>, and <strong>Mantissa ($M$)</strong>. 
+          NormalFloat 4 (<strong>NF4</strong>) is an information-theoretically optimal 4-bit quantile representation designed for zero-mean Gaussian LLM weights.
+        </p>
+
+        <div className="py-3 px-4 rounded-lg bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-sm">
+          <BlockMath math={`\\text{Value} = (-1)^S \\times 2^{E - \\text{Bias}} \\times \\left(1 + \\frac{M}{2^{\\text{bits}}}\\right)`} />
         </div>
 
-        <div className="mt-auto space-y-4 pt-8 lg:pt-0">
-          <div className="text-[10px] font-bold uppercase text-text-muted dark:text-text-muted-dark tracking-widest">Active Constraints</div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-3 border border-border-main dark:border-border-dark rounded">
-              <div className="text-[9px] uppercase opacity-50">Exponent Bits</div>
-              <div className="text-sm font-mono">{f.exp}</div>
-            </div>
-            <div className="p-3 border border-border-main dark:border-border-dark rounded">
-              <div className="text-[9px] uppercase opacity-50">Mantissa/Int Bits</div>
-              <div className="text-sm font-mono">{f.mantissa}</div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-xs">
+          <div className="p-3 rounded border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20">
+            <div className="font-bold text-blue-600 dark:text-blue-400">FP32 (32-bit)</div>
+            <div className="text-zinc-500 dark:text-zinc-400 mt-1">1 Sign, 8 Exponent (Bias 127), 23 Mantissa. Precision limit: ~10⁻⁷.</div>
+          </div>
+          <div className="p-3 rounded border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/20">
+            <div className="font-bold text-indigo-600 dark:text-indigo-400">FP16 (16-bit)</div>
+            <div className="text-zinc-500 dark:text-zinc-400 mt-1">1 Sign, 5 Exponent (Bias 15), 10 Mantissa. High risk of underflow.</div>
+          </div>
+          <div className="p-3 rounded border border-purple-200 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-950/20">
+            <div className="font-bold text-purple-600 dark:text-purple-400">BF16 (16-bit)</div>
+            <div className="text-zinc-500 dark:text-zinc-400 mt-1">1 Sign, 8 Exponent (Bias 127), 7 Mantissa. Preserves full FP32 dynamic range.</div>
+          </div>
+          <div className="p-3 rounded border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20">
+            <div className="font-bold text-emerald-600 dark:text-emerald-400">NF4 (4-bit)</div>
+            <div className="text-zinc-500 dark:text-zinc-400 mt-1">Quantile bins optimized for N(0,1) Gaussian distribution.</div>
           </div>
         </div>
       </section>
 
-      {/* Interactive Visualizer */}
-      <section className="flex-1 bg-bg-app dark:bg-bg-dark relative flex flex-col p-4 lg:p-8 overflow-y-auto">
-        <div className="flex-1 border border-dashed border-[#D4D4D8] dark:border-[#3F3F46] rounded-xl flex flex-col p-6 lg:p-10 relative overflow-hidden bg-white dark:bg-[#18181B] shadow-inner min-h-[400px]">
-          
-          <div className="flex gap-2 justify-center mb-12">
-            {(Object.keys(FORMATS) as Format[]).map(fmt => (
+      {/* 🎨 SECTION 2: DYNAMIC VISUAL CANVAS & ANIMATION */}
+      <section className="p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090B] space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold">
+              SECTION 2
+            </span>
+            <h3 className="text-lg font-bold tracking-tight">Dynamic Visual Canvas: Clickable Bit-Strip & Gaussian Quantiles</h3>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {(["FP32", "FP16", "BF16", "NF4"] as const).map(fmt => (
               <button
                 key={fmt}
-                onClick={() => setFormat(fmt)}
+                onClick={() => setSelectedFormat(fmt)}
                 className={cn(
-                  "px-4 py-2 rounded font-mono text-xs border transition-colors",
-                  format === fmt
-                    ? "bg-text-main dark:bg-white text-white dark:text-black border-text-main dark:border-white font-bold"
-                    : "bg-white dark:bg-card-dark border-border-main dark:border-border-dark hover:bg-black/5 dark:hover:bg-white/5 opacity-70 hover:opacity-100"
+                  "px-3 py-1 text-xs font-mono rounded border transition-all",
+                  selectedFormat === fmt
+                    ? "bg-black dark:bg-white text-white dark:text-black font-bold"
+                    : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 )}
               >
                 {fmt}
               </button>
             ))}
           </div>
+        </div>
 
-          <div className="flex-1 flex flex-col justify-center items-center gap-16 overflow-x-auto">
-            <div className="flex gap-1 min-w-max pb-4">
-              {bits.map((bit, idx) => {
-                let group = "";
-                if (idx === 0) group = "sign";
-                else if (idx <= f.exp) group = "exp";
-                else group = "mantissa";
+        {/* Interactive Bit-Strip Box */}
+        <div className="p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-mono text-xs text-zinc-500">
+              <Binary size={16} />
+              <span>Interactive Bit-Strip (Click any bit to flip 0 to 1):</span>
+            </div>
+            <div className="font-mono text-base font-bold text-blue-600 dark:text-blue-400">
+              Decoded Value = {computedFloatVal.toFixed(6)}
+            </div>
+          </div>
 
-                return (
-                  <motion.button
-                    key={idx}
-                    whileTap={{ scale: 0.85 }}
-                    onClick={() => toggleBit(idx)}
+          {/* Render Bit-Strips */}
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+            {/* Sign Bit */}
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-[10px] font-bold text-red-500">SIGN (1b)</span>
+              <button
+                onClick={() => setSignBit(signBit === 0 ? 1 : 0)}
+                className={cn(
+                  "w-9 h-10 rounded border-2 flex items-center justify-center font-bold text-sm shadow-sm transition-all",
+                  signBit === 1 ? "bg-red-500 text-white border-red-600" : "bg-white dark:bg-zinc-900 border-red-300 dark:border-red-800 text-red-500"
+                )}
+              >
+                {signBit}
+              </button>
+            </div>
+
+            <div className="h-8 w-px bg-zinc-300 dark:bg-zinc-700 mx-1"></div>
+
+            {/* Exponent Bits */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-amber-500">EXPONENT ({exponentBits.length}b)</span>
+              <div className="flex gap-1">
+                {exponentBits.map((bit, idx) => (
+                  <button
+                    key={`exp-${idx}`}
+                    onClick={() => toggleExponentBit(idx)}
                     className={cn(
-                      "w-6 h-10 sm:w-8 sm:h-12 flex items-center justify-center font-mono text-sm font-bold transition-colors select-none",
-                      group === "sign" && "bg-black text-white dark:bg-white dark:text-black",
-                      group === "exp" && "border-2 border-border-main dark:border-border-dark text-brand-blue",
-                      group === "mantissa" && "border border-dashed border-border-main dark:border-border-dark",
-                      bit === 1 ? "bg-brand-emerald/20 text-brand-emerald border-brand-emerald" : (group === "mantissa" ? "text-text-muted dark:text-text-muted-dark" : ""),
-                      group === "sign" && bit === 1 && "bg-brand-crimson dark:bg-brand-crimson text-white dark:text-white"
+                      "w-7 h-10 rounded border flex items-center justify-center font-bold transition-all",
+                      bit === 1 ? "bg-amber-500 text-white border-amber-600" : "bg-white dark:bg-zinc-900 border-amber-300 dark:border-amber-800 text-amber-600"
                     )}
                   >
                     {bit}
-                  </motion.button>
-                );
-              })}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="w-full max-w-2xl space-y-4">
-              <div className="flex justify-between text-[10px] font-mono text-text-muted dark:text-text-muted-dark uppercase">
-                <span>-∞</span>
-                <span className="font-bold text-text-main dark:text-text-dark text-xs">
-                  Value: {Number.isNaN(decimalValue) ? "NaN" : decimalValue.toExponential(4)}
-                </span>
-                <span>+∞</span>
+            <div className="h-8 w-px bg-zinc-300 dark:bg-zinc-700 mx-1"></div>
+
+            {/* Mantissa Bits */}
+            <div className="flex flex-col gap-1 overflow-x-auto">
+              <span className="text-[10px] font-bold text-blue-500">MANTISSA (23b)</span>
+              <div className="flex gap-1">
+                {mantissaBits.map((bit, idx) => (
+                  <button
+                    key={`mant-${idx}`}
+                    onClick={() => toggleMantissaBit(idx)}
+                    className={cn(
+                      "w-6 h-10 rounded border flex items-center justify-center text-xs font-bold transition-all",
+                      bit === 1 ? "bg-blue-600 text-white border-blue-700" : "bg-white dark:bg-zinc-900 border-blue-200 dark:border-blue-900 text-blue-500"
+                    )}
+                  >
+                    {bit}
+                  </button>
+                ))}
               </div>
-              <div className="h-1 bg-border-main dark:bg-border-dark rounded-full relative overflow-visible">
-                <motion.div 
-                  className="absolute top-1/2 -translate-y-1/2 w-2 h-4 bg-brand-blue rounded-full shadow-sm"
-                  animate={{
-                    left: Number.isNaN(decimalValue) ? "50%" : `${Math.max(0, Math.min(100, 50 + (Math.sign(decimalValue) * Math.log10(Math.abs(decimalValue) + 1) * 5)))}%`
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            </div>
+          </div>
+
+          {/* Logarithmic / Gaussian Bell Curve Canvas View */}
+          <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-white dark:bg-black relative min-h-[160px] flex flex-col justify-center">
+            <div className="text-[11px] font-mono text-zinc-500 mb-2 flex items-center gap-2">
+              <Activity size={14} className="text-emerald-500" />
+              <span>Gaussian Bell Curve & NF4 Quantile Bin Mapping (<InlineMath math="\\mathcal{N}(0,1)" />):</span>
+            </div>
+
+            {/* Gaussian Bell Curve visualization with NF4 Quantile lines */}
+            <div className="relative w-full h-24 flex items-end border-b border-zinc-300 dark:border-zinc-700 px-4">
+              {NF4_QUANTILE_TABLE.map((qVal, idx) => {
+                const posX = ((qVal + 1) / 2) * 100;
+                const isSelectedBin = idx === nf4Result.index;
+
+                return (
+                  <div
+                    key={`nf4-bin-${idx}`}
+                    className="absolute bottom-0 flex flex-col items-center group cursor-pointer"
+                    style={{ left: `${posX}%` }}
+                    onClick={() => setNf4TestVal(qVal)}
+                  >
+                    <div className={cn("w-0.5 h-16 transition-all", isSelectedBin ? "bg-emerald-500 w-1.5 z-10" : "bg-zinc-300 dark:bg-zinc-700")} />
+                    <span className={cn("text-[9px] font-mono mt-1 opacity-70 group-hover:opacity-100", isSelectedBin && "text-emerald-500 font-bold opacity-100")}>
+                      {idx}
+                    </span>
+                  </div>
+                );
+              })}
+
+              {/* Crosshair indicator */}
+              <div 
+                className="absolute bottom-0 w-3 h-3 rounded-full bg-blue-600 -ml-1.5 border-2 border-white shadow-lg transition-all duration-300 z-20"
+                style={{ left: `${((Math.max(-1, Math.min(1, nf4TestVal)) + 1) / 2) * 100}%`, bottom: '24px' }}
+                title={`Target Value: ${nf4TestVal}`}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 🔢 SECTION 3: STEP-BY-STEP NUMERICAL LAB & EDITABLE DATA TABLE */}
+      <section className="p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded bg-purple-600/10 text-purple-600 dark:text-purple-400 font-mono text-xs font-bold">
+              SECTION 3
+            </span>
+            <h3 className="text-lg font-bold tracking-tight">Step-by-Step Numerical Lab & Worked Bit Calculations</h3>
+          </div>
+
+          <div className="flex items-center gap-3 font-mono text-xs">
+            <span>Target Float <InlineMath math="x" />:</span>
+            <input
+              type="number"
+              step="0.1"
+              value={targetVal}
+              onChange={(e) => applyTargetValToBits(parseFloat(e.target.value) || 0)}
+              className="w-24 p-1.5 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-black font-bold text-blue-600 dark:text-blue-400"
+            />
+          </div>
+        </div>
+
+        {/* Step-by-Step Worked Table */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono text-xs">
+          
+          {/* FP32 Worked Breakdown */}
+          <div className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090B] space-y-3">
+            <div className="font-bold text-sm text-blue-600 dark:text-blue-400 flex items-center justify-between">
+              <span>FP32 Bit Encoding Breakdown</span>
+              <span><InlineMath math={`x = ${targetVal}`} /></span>
+            </div>
+
+            <div className="space-y-2 text-zinc-600 dark:text-zinc-400 border-t border-zinc-200 dark:border-zinc-800 pt-2">
+              <div><strong>Sign Bit (<InlineMath math="S" />):</strong> <span className="text-red-500 font-bold">{signBit}</span> ({signBit === 0 ? "Positive (+)" : "Negative (-)"})</div>
+              <div><strong>Exponent (<InlineMath math="E" />):</strong> <span className="text-amber-500 font-bold">{expValueInt}</span> (Binary: `{exponentBits.join("")}`)</div>
+              <div><strong>Unbiased Exponent (<InlineMath math="E - 127" />):</strong> {expValueInt} - 127 = <strong>{expValueInt - 127}</strong></div>
+              <div><strong>Mantissa Fraction (<InlineMath math="M" />):</strong> <span className="text-blue-500 font-bold">{mantissaValueFrac.toFixed(6)}</span></div>
+              <div className="p-2 rounded bg-zinc-100 dark:bg-zinc-900 text-black dark:text-white font-bold mt-2">
+                Decoded Math: <InlineMath math={`(-1)^{${signBit}} \\times 2^{${expValueInt - 127}} \\times (1 + ${mantissaValueFrac.toFixed(4)}) = \\mathbf{${computedFloatVal.toFixed(4)}}`} />
+              </div>
+            </div>
+          </div>
+
+          {/* NF4 16-Bin Lookup Table & Quantization */}
+          <div className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090B] space-y-3">
+            <div className="font-bold text-sm text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+              <span>NF4 Quantile Lookup & Mapping</span>
+              <div className="flex items-center gap-1">
+                <span><InlineMath math="x_{\text{NF4}} =" /></span>
+                <input
+                  type="number"
+                  step="0.05"
+                  value={nf4TestVal}
+                  onChange={(e) => setNf4TestVal(parseFloat(e.target.value) || 0)}
+                  className="w-20 p-1 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-black font-bold text-emerald-600"
                 />
+              </div>
+            </div>
+
+            <div className="space-y-2 text-zinc-600 dark:text-zinc-400 border-t border-zinc-200 dark:border-zinc-800 pt-2">
+              <div><strong>Nearest Bin Index:</strong> <span className="text-emerald-500 font-bold">Index {nf4Result.index}</span></div>
+              <div><strong>Quantized Bin Value:</strong> <span className="font-bold text-black dark:text-white">{nf4Result.binValue.toFixed(4)}</span></div>
+              <div><strong>Quantization Error (<InlineMath math="\epsilon" />):</strong> <span className="text-red-500 font-bold">{nf4Result.error.toFixed(4)}</span></div>
+
+              <div className="text-[11px] font-bold text-zinc-500 mt-2">NF4 16 Quantile Bins:</div>
+              <div className="grid grid-cols-4 gap-1 text-[10px]">
+                {NF4_QUANTILE_TABLE.map((val, idx) => (
+                  <div
+                    key={`table-bin-${idx}`}
+                    className={cn(
+                      "p-1 rounded text-center border",
+                      idx === nf4Result.index
+                        ? "bg-emerald-500 text-white font-bold border-emerald-600"
+                        : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                    )}
+                  >
+                    [{idx}] {val}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
         </div>
       </section>
+
     </div>
   );
 }

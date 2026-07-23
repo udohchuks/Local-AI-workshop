@@ -1,250 +1,181 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
-import { quantizeAsymmetric } from "../../lib/quantization-math";
 import 'katex/dist/katex.min.css';
-import { BlockMath, InlineMath } from 'react-katex';
+import { BlockMath } from 'react-katex';
+import { quantizeSymmetric, quantizeAsymmetric } from "../../lib/quantization-math";
+import { ArrowRight, Check, AlertCircle } from "lucide-react";
 
 export function Chapter05Asymmetric() {
-  const [step, setStep] = useState(0);
-  const floatValues = [-6.4, -1.2, 0.0, 2.5, 8.1];
-  
-  const { scale: s, zeroPoint: z, quantized } = quantizeAsymmetric(floatValues);
-  const alpha = Math.max(...floatValues);
-  const beta = Math.min(...floatValues);
+  const [inputs, setInputs] = useState<number[]>([-6.4, -1.2, 0.0, 2.5, 8.1]);
 
-  const width = 600;
-  const padding = 40;
-  const usableWidth = width - padding * 2;
-  const floatRange = alpha - beta;
-  const intRange = 255;
+  const asymRes = quantizeAsymmetric(inputs);
+  const symRes = quantizeSymmetric(inputs);
 
-  const floatToX = (v: number) => padding + ((v - beta) / floatRange) * usableWidth;
-  const intToX = (v: number) => padding + ((v - (-128)) / intRange) * usableWidth;
+  const handleCellEdit = (index: number, val: number) => {
+    const next = [...inputs];
+    next[index] = val;
+    setInputs(next);
+  };
 
-  const steps = [
-    "Find Min/Max",
-    "Scale Factor",
-    "Zero-Point",
-    "Mapping"
-  ];
+  const errorRatio = symRes.mae > 0 ? (symRes.mae / (asymRes.mae || 0.000001)) : 1;
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row w-full h-full animate-in fade-in duration-500">
-      <section className="w-full lg:w-[420px] p-6 lg:p-10 border-b lg:border-b-0 lg:border-r border-border-main dark:border-border-dark flex flex-col gap-6 shrink-0 bg-white dark:bg-bg-dark overflow-y-auto">
-        <div className="space-y-4">
-          <h2 className="text-3xl font-serif leading-tight italic">Asymmetric Walkthrough</h2>
-          <p className="text-sm text-text-muted dark:text-text-muted-dark leading-relaxed">
-            Asymmetric quantization scales from the exact min and max values, mapping them fully across the INT8 range <InlineMath math="[-128, 127]" />. We use a "Zero-Point" (<InlineMath math="z" />) to ensure <InlineMath math="0.0" /> perfectly maps to an integer.
-          </p>
+    <div className="flex flex-col w-full min-h-full p-4 lg:p-8 space-y-8 bg-white dark:bg-[#09090B] text-black dark:text-white">
+      
+      {/* 📖 SECTION 1: THEORY & FORMULA BANNER */}
+      <section className="p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="p-2 rounded bg-blue-600/10 text-blue-600 dark:text-blue-400 font-mono text-xs font-bold">
+            SECTION 1
+          </span>
+          <h2 className="text-xl font-bold tracking-tight">Theory & Formula Banner: Asymmetric Quantization Walkthrough</h2>
         </div>
-        
-        <div className="p-5 bg-sidebar-bg dark:bg-[#121214] border-l-4 border-brand-blue text-[11px] leading-relaxed">
-          <div className="text-text-muted dark:text-text-muted-dark mb-3 font-bold uppercase tracking-widest font-sans">Formulae</div>
-          <div className="text-[13px] overflow-x-auto overflow-y-hidden space-y-2">
-            <BlockMath math={`\\textcolor{#eab308}{s} = \\frac{\\textcolor{#06b6d4}{\\alpha} - \\textcolor{#10b981}{\\beta}}{255}`} />
-            <BlockMath math={`\\textcolor{#3b82f6}{z} = \\text{round}\\left(-\\frac{\\textcolor{#10b981}{\\beta}}{\\textcolor{#eab308}{s}}\\right) - 128`} />
-            <BlockMath math={`\\text{x}_{\\text{quantized}} = \\text{clamp}\\left(\\text{round}\\left(\\frac{\\textcolor{#a855f7}{x}}{\\textcolor{#eab308}{s}}\\right) + \\textcolor{#3b82f6}{z}, -128, 127\\right)`} />
+        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-4xl">
+          Asymmetric Quantization introduces an integer offset <strong>Zero-Point ($z$)</strong> to map asymmetric float ranges $[\beta, \alpha]$ across the full 256-bin spectrum $[-128, 127]$. 
+          This avoids wasting discrete integer bins on unused negative ranges, resulting in up to <strong>~5.8× smaller quantization error</strong> than Symmetric mode!
+        </p>
+
+        <div className="py-3 px-4 rounded-lg bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-sm space-y-2">
+          <BlockMath math={`s = \\frac{\\alpha - \\beta}{255}, \\quad z = \\text{round}\\left(-\\frac{\\beta}{s}\\right) - 128`} />
+          <BlockMath math={`q = \\text{clamp}\\left( \\text{round}\\left(\\frac{x}{s}\\right) + z, -128, 127 \\right), \\quad \\hat{x} = (q - z) \\times s`} />
+        </div>
+      </section>
+
+      {/* 🎨 SECTION 2: DYNAMIC VISUAL CANVAS & ANIMATION */}
+      <section className="p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090B] space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold">
+              SECTION 2
+            </span>
+            <h3 className="text-lg font-bold tracking-tight">Dynamic Visual Canvas: Zero-Point Sliding & Comparative Errors</h3>
+          </div>
+
+          <div className="flex items-center gap-2 font-mono text-xs">
+            <span className="px-2.5 py-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">
+              Zero-Point $z = {asymRes.zeroPoint}$
+            </span>
+            <span className="px-2.5 py-1 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold">
+              ~{errorRatio.toFixed(1)}× Smaller Error
+            </span>
           </div>
         </div>
-        
-        {/* Step Navigation */}
-        <div className="mt-8 space-y-2">
-          {steps.map((title, idx) => (
-            <button
-              key={idx}
-              onClick={() => setStep(idx)}
-              className={cn(
-                "w-full text-left p-3 rounded text-sm font-bold tracking-wide transition-colors border",
-                step === idx 
-                  ? "bg-brand-blue text-white border-brand-blue" 
-                  : "bg-white dark:bg-card-dark text-text-muted border-border-main dark:border-border-dark hover:border-brand-blue/50"
-              )}
-            >
-              {idx + 1}. {title}
-            </button>
-          ))}
+
+        {/* Side-by-side Comparative Error Bar Chart */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 bg-zinc-50/50 dark:bg-zinc-950/50">
+          
+          {/* Symmetric Mode Card */}
+          <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090B] space-y-4">
+            <div className="flex justify-between items-center font-mono text-xs">
+              <span className="font-bold text-purple-600">Symmetric Mode ($z=0$)</span>
+              <span className="text-red-500 font-bold">MAE = {symRes.mae.toFixed(4)}</span>
+            </div>
+
+            <div className="space-y-2">
+              {inputs.map((val, idx) => (
+                <div key={`sym-bar-${idx}`} className="flex items-center justify-between text-[11px] font-mono">
+                  <span className="w-12 text-zinc-500">{val.toFixed(1)}</span>
+                  <div className="flex-1 mx-3 bg-zinc-100 dark:bg-zinc-800 h-3 rounded overflow-hidden">
+                    <motion.div
+                      layout
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(100, symRes.errors[idx] * 4000)}%` }}
+                      className="bg-red-500 h-full"
+                    />
+                  </div>
+                  <span className="w-14 text-right font-bold text-red-500">{symRes.errors[idx].toFixed(4)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Asymmetric Mode Card */}
+          <div className="p-4 rounded-xl border border-emerald-300 dark:border-emerald-800/60 bg-emerald-50/30 dark:bg-emerald-950/20 space-y-4">
+            <div className="flex justify-between items-center font-mono text-xs">
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">Asymmetric Mode ($z = {asymRes.zeroPoint}$)</span>
+              <span className="text-emerald-600 font-bold">MAE = {asymRes.mae.toFixed(4)}</span>
+            </div>
+
+            <div className="space-y-2">
+              {inputs.map((val, idx) => (
+                <div key={`asym-bar-${idx}`} className="flex items-center justify-between text-[11px] font-mono">
+                  <span className="w-12 text-zinc-500">{val.toFixed(1)}</span>
+                  <div className="flex-1 mx-3 bg-zinc-100 dark:bg-zinc-800 h-3 rounded overflow-hidden">
+                    <motion.div
+                      layout
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(100, asymRes.errors[idx] * 4000)}%` }}
+                      className="bg-emerald-500 h-full"
+                    />
+                  </div>
+                  <span className="w-14 text-right font-bold text-emerald-600">{asymRes.errors[idx].toFixed(4)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </section>
 
-      <section className="flex-1 bg-bg-app dark:bg-bg-dark relative flex flex-col p-4 lg:p-8 overflow-y-auto items-center">
-        
-        {/* Float Array */}
-        <div className="flex gap-2 justify-center mb-16">
-          {floatValues.map((v, i) => {
-            const isMin = v === beta;
-            const isMax = v === alpha;
-            return (
-              <div key={i} className="flex flex-col items-center">
-                <div className="h-6 mb-2 flex items-end">
-                  {step >= 0 && (isMin || isMax) && (
-                    <span className={cn("text-[10px] font-bold uppercase tracking-widest", isMin ? "text-brand-emerald" : "text-cyan-500")}>
-                      {isMin ? "lowest (β)" : "highest (α)"}
-                    </span>
-                  )}
-                </div>
-                <div className={cn(
-                  "w-14 h-14 flex items-center justify-center text-white font-mono text-base font-bold shadow-sm transition-colors",
-                  isMin ? "bg-brand-emerald" : isMax ? "bg-cyan-500" : "bg-[#8B5CF6]"
-                )}>
-                  {v.toFixed(2)}
-                </div>
-              </div>
-            )
-          })}
+      {/* 🔢 SECTION 3: STEP-BY-STEP NUMERICAL LAB & EDITABLE DATA TABLE */}
+      <section className="p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded bg-purple-600/10 text-purple-600 dark:text-purple-400 font-mono text-xs font-bold">
+              SECTION 3
+            </span>
+            <h3 className="text-lg font-bold tracking-tight">Step-by-Step Numerical Lab & Asymmetric Calculation Table</h3>
+          </div>
+
+          <div className="text-xs font-mono space-x-4">
+            <span>Scale ($s$): <strong className="text-blue-600">{asymRes.scale.toFixed(6)}</strong></span>
+            <span>Zero-Point ($z$): <strong className="text-emerald-600">{asymRes.zeroPoint}</strong></span>
+          </div>
         </div>
 
-        {/* Central Display Area */}
-        <div className="w-full max-w-3xl flex flex-col items-center pb-20">
-            
-            {step >= 0 && (
-              <motion.div 
-                key="step0"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center space-y-4 pt-10"
-              >
-                <div className="text-xl font-serif text-text-main dark:text-text-dark max-w-lg leading-relaxed mx-auto">
-                  First, we identify the <span className="text-brand-emerald font-bold not-italic">minimum (β = {beta})</span> and <span className="text-cyan-500 font-bold not-italic">maximum (α = {alpha})</span> values from our input tensor.
-                </div>
-                <p className="text-text-muted text-sm">These boundaries will be mapped to the extremes of our INT8 range <InlineMath math="[-128, 127]" />.</p>
-                
-                <div className="pt-8 text-left space-y-6 border-t border-border-main/50 dark:border-border-dark/50 mt-8 max-w-2xl mx-auto">
-                  <div className="flex items-center justify-between border-b border-border-main/20 dark:border-border-dark/20 pb-4">
-                    <div className="text-xl">
-                      <BlockMath math={`\\textcolor{#eab308}{s} = \\frac{\\textcolor{#06b6d4}{\\alpha} - \\textcolor{#10b981}{\\beta}}{255}`} />
-                    </div>
-                    <span className="text-sm text-text-muted">(scale factor)</span>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-border-main/20 dark:border-border-dark/20 pb-4">
-                    <div className="text-xl">
-                      <BlockMath math={`\\textcolor{#3b82f6}{z} = \\text{round}\\left(-\\frac{\\textcolor{#10b981}{\\beta}}{\\textcolor{#eab308}{s}}\\right) - 128`} />
-                    </div>
-                    <span className="text-sm text-text-muted">(zeropoint)</span>
-                  </div>
-                  <div className="flex items-center justify-between pb-4">
-                    <div className="text-xl">
-                      <BlockMath math={`\\text{x}_{\\text{quantized}} = \\text{round}\\left(\\frac{\\textcolor{#a855f7}{x}}{\\textcolor{#eab308}{s}}\\right) + \\textcolor{#3b82f6}{z}`} />
-                    </div>
-                    <span className="text-sm text-text-muted">(quantization)</span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
+        {/* Asymmetric Calculation Data Table */}
+        <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090B]">
+          <table className="w-full text-left border-collapse text-xs font-mono">
+            <thead>
+              <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
+                <th className="p-3">Input ($x_i$) [Editable]</th>
+                <th className="p-3">Exact $(x_i / s) + z$</th>
+                <th className="p-3">Quantized ($q_i$)</th>
+                <th className="p-3">Dequantized ({"$\\hat{x}_i = (q_i - z)s$"})</th>
+                <th className="p-3">Error ({"$|x_i - \\hat{x}_i|$"})</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              {inputs.map((val, idx) => {
+                const exact = asymRes.exactRatios[idx];
+                const q = asymRes.quantized[idx];
+                const dequant = asymRes.dequantized[idx];
+                const err = asymRes.errors[idx];
 
-            {step >= 1 && (
-              <motion.div 
-                key="step1"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center pt-10"
-              >
-                <div className="text-sm font-bold uppercase tracking-widest text-text-muted mb-4">Scale Factor (<InlineMath math="\textcolor{#eab308}{s}" />)</div>
-                <div className="flex items-center justify-center relative max-w-lg mx-auto">
-                  <div className="text-2xl lg:text-3xl">
-                    <BlockMath math={`\\textcolor{#eab308}{s} = \\frac{\\textcolor{#06b6d4}{${alpha}} - \\textcolor{#10b981}{${beta}}}{255} = \\textcolor{#eab308}{${s.toFixed(5)}}`} />
-                  </div>
-                  <span className="absolute right-0 text-sm text-text-muted">(scale factor)</span>
-                </div>
-                <p className="text-text-muted mt-4 max-w-md mx-auto text-sm">
-                  The scale factor represents how many float units correspond to a single INT8 bin.
-                </p>
-              </motion.div>
-            )}
-
-            {step >= 2 && (
-              <motion.div 
-                key="step2"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center pt-10"
-              >
-                <div className="text-sm font-bold uppercase tracking-widest text-text-muted mb-4">Zero-Point (<InlineMath math="\textcolor{#3b82f6}{z}" />)</div>
-                <div className="flex items-center justify-center relative max-w-lg mx-auto">
-                  <div className="text-2xl lg:text-3xl">
-                    <BlockMath math={`\\textcolor{#3b82f6}{z} = \\text{round}\\left(-\\frac{\\textcolor{#10b981}{${beta}}}{\\textcolor{#eab308}{${s.toFixed(5)}}}\\right) - 128 = \\textcolor{#3b82f6}{${z}}`} />
-                  </div>
-                  <span className="absolute right-0 text-sm text-text-muted">(zeropoint)</span>
-                </div>
-                <p className="text-text-muted mt-4 max-w-md mx-auto text-sm">
-                  The zero-point ensures that a float value of exactly <InlineMath math="0.0" /> maps perfectly to an integer without error.
-                </p>
-              </motion.div>
-            )}
-
-            {step >= 3 && (
-              <motion.div 
-                key="step3"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="w-full flex flex-col items-center justify-between mt-16"
-              >
-                {/* Visualizer Canvas */}
-                <div className="relative w-full max-w-[600px] h-[200px] mt-4">
-                  {/* Float Axis */}
-                  <div className="absolute top-0 left-0 right-0 h-2 bg-[#E9D5FF] dark:bg-[#4C1D95] rounded-full">
-                    {floatValues.map((v, i) => (
-                      <div key={i} className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#8B5CF6] border-2 border-white dark:border-bg-dark shadow" style={{ left: `${floatToX(v)}px`, transform: 'translate(-50%, -50%)' }} />
-                    ))}
-                    <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-brand-emerald border-2 border-white dark:border-bg-dark shadow z-10" style={{ left: `${floatToX(beta)}px`, transform: 'translate(-50%, -50%)' }} />
-                    <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-cyan-500 border-2 border-white dark:border-bg-dark shadow z-10" style={{ left: `${floatToX(alpha)}px`, transform: 'translate(-50%, -50%)' }} />
-                  </div>
-                  
-                  {/* INT Axis */}
-                  <div className="absolute bottom-10 left-0 right-0 h-2 bg-[#FBCFE8] dark:bg-[#831843] rounded-full">
-                    {quantized.map((q, i) => (
-                      <div key={i} className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#EC4899] border-2 border-white dark:border-bg-dark shadow" style={{ left: `${intToX(q)}px`, transform: 'translate(-50%, -50%)' }} />
-                    ))}
-                    <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-brand-emerald border-2 border-white dark:border-bg-dark shadow z-10" style={{ left: `${intToX(-128)}px`, transform: 'translate(-50%, -50%)' }} />
-                    <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-cyan-500 border-2 border-white dark:border-bg-dark shadow z-10" style={{ left: `${intToX(127)}px`, transform: 'translate(-50%, -50%)' }} />
-                    {/* Zero point marker */}
-                    <div className="absolute top-full mt-2 -translate-x-1/2 text-xs font-bold text-brand-crimson" style={{ left: `${intToX(z)}px` }}><InlineMath math="z" />={z}</div>
-                  </div>
-
-                  {/* Connecting Lines */}
-                  <svg className="absolute inset-0 w-full h-[160px] pointer-events-none" style={{ top: '8px' }}>
-                    {floatValues.map((v, i) => (
-                      <motion.line 
-                        key={i}
-                        x1={floatToX(v)} y1={0}
-                        x2={intToX(quantized[i])} y2={152}
-                        stroke="var(--color-border-main)"
-                        strokeWidth="1.5"
-                        strokeDasharray="4 4"
-                        initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ pathLength: 1, opacity: 1 }}
-                        transition={{ duration: 0.8, delay: i * 0.1 }}
+                return (
+                  <tr key={`asym-row-${idx}`}>
+                    <td className="p-3">
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={val}
+                        onChange={(e) => handleCellEdit(idx, parseFloat(e.target.value) || 0)}
+                        className="w-20 p-1 rounded border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-bold text-blue-600"
                       />
-                    ))}
-                  </svg>
-                </div>
-
-                {/* Quantized Array */}
-                <div className="flex gap-2 justify-center pb-8 mt-auto">
-                  {quantized.map((q, i) => {
-                    const isZeroPoint = q === z;
-                    return (
-                      <motion.div 
-                        key={i} 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="flex flex-col items-center"
-                      >
-                        <div className={cn(
-                          "w-14 h-14 flex items-center justify-center text-white font-mono text-base font-bold shadow-sm transition-colors mt-8",
-                          isZeroPoint ? "bg-brand-crimson" : "bg-[#EC4899]"
-                        )}>
-                          {q}
-                        </div>
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              </motion.div>
-            )}
+                    </td>
+                    <td className="p-3 text-zinc-500">{exact.toFixed(2)}</td>
+                    <td className="p-3 font-bold text-emerald-600">{q}</td>
+                    <td className="p-3 font-bold text-black dark:text-white">{dequant.toFixed(3)}</td>
+                    <td className="p-3 font-bold text-emerald-500">{err.toFixed(4)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </section>
+
     </div>
   );
 }
