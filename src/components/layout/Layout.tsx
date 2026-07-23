@@ -170,30 +170,30 @@ export function Layout({ children, chapter, setChapter, isDark, toggleDark }: La
                 disabled={chapter === 0}
                 onClick={() => setChapter(Math.max(0, chapter - 1))}
                 className={cn(
-                  "px-4 py-2 text-xs font-medium rounded border flex items-center gap-2 transition-all flex-shrink-0 min-w-[100px] justify-center",
+                  "p-2 rounded-full border flex items-center justify-center transition-all flex-shrink-0 min-w-[40px]",
                   chapter === 0
                     ? "opacity-30 cursor-not-allowed border-zinc-200 dark:border-zinc-800"
                     : "border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 )}
+                title="Previous Chapter"
               >
-                <ChevronLeft size={14} /> Previous Chapter
+                <ChevronLeft size={16} />
               </button>
 
-              <div className="text-[11px] font-mono text-zinc-500 hidden sm:block">
-                {currentChapterObj.title}
-              </div>
+              
 
               <button
                 disabled={chapter === CHAPTER_LIST.length - 1}
                 onClick={() => setChapter(Math.min(CHAPTER_LIST.length - 1, chapter + 1))}
                 className={cn(
-                  "px-4 py-2 text-xs font-medium rounded border flex items-center gap-2 transition-all flex-shrink-0 min-w-[100px] justify-center",
+                  "p-2 rounded-full border flex items-center justify-center transition-all flex-shrink-0 min-w-[40px]",
                   chapter === CHAPTER_LIST.length - 1
                     ? "opacity-30 cursor-not-allowed border-zinc-200 dark:border-zinc-800"
                     : "border-blue-600 bg-blue-600 text-white hover:bg-blue-700 dark:border-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600"
                 )}
+                title="Next Chapter"
               >
-                Next Chapter <ChevronRight size={14} />
+                <ChevronRight size={16} />
               </button>
             </footer>
           </div>
