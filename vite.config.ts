@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: '/Local-AI-workshop/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
